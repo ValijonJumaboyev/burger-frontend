@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Orders</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <div class="flex flex-col h-screen">
+    <!-- Header -->
+    <div class="p-4 flex justify-between items-center bg-white shadow-md">
+      <h1 class="text-xl font-semibold">Управление заказами</h1>
+      <button id="openOrderModal"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Создать заказ
+      </button>
+      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <a href="./sklad.html ">Sklad</a>
+      </button>
+    </div>
+
+    <!-- Orders List -->
+    <div id="ordersContainer" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto flex-1">
+      <!-- Orders will be rendered here -->
+    </div>
+  </div>
+
+  <!-- Order Modal -->
+  <div id="orderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[500px] max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Новый заказ</h2>
+        <button id="closeOrderModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <form id="orderForm" class="space-y-4">
+        <!-- Customer -->
+        <input type="text" id="customerName" placeholder="Имя клиента" class="w-full border px-3 py-2 rounded">
+
+        <!-- Items -->
+        <div id="itemsContainer" class="space-y-2"></div>
+        <button type="button" id="addItemBtn" class="text-sm text-blue-600 hover:underline">
+          + Добавить товар
+        </button>
+
+        <!-- Total -->
+        <div class="flex justify-between font-semibold text-lg">
+          <span>Итого:</span>
+          <span id="orderTotal">0</span> сум
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+          Сохранить заказ
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://burger-backend-o3cx.onrender.com";
+    const API_ORDERS = `${API_URL}/api/orders`; // adjust if your backend mounts it differently
+
+    const orderModal = document.getElementById("orderModal");
+    const openOrderModal = document.getElementById("openOrderModal");
+    const closeOrderModal = document.getElementById("closeOrderModal");
+    const orderForm = document.getElementById("orderForm");
+    const itemsContainer = document.getElementById("itemsContainer");
+    const orderTotalEl = document.getElementById("orderTotal");
+    const ordersContainer = document.getElementById("ordersContainer");
+
+    let items = [];
+
+    // --- Modal open/close ---
+    openOrderModal.addEventListener("click", () => {
+      orderModal.classList.remove("hidden");
+      items = [];
+      itemsContainer.innerHTML = "";
+      updateTotal();
+    });
+
+    closeOrderModal.addEventListener("click", () => orderModal.classList.add("hidden"));
+
+    // --- Add item row ---
+    document.getElementById("addItemBtn").addEventListener("click", () => {
+      const index = items.length;
+      items.push({ itemId: null, name: "", quantity: 1, price: 0, total: 0 });
+
+      const row = document.createElement("div");
+      row.className = "flex gap-2 items-center";
+      row.innerHTML = `
+    <input type="text" placeholder="Товар" class="border px-2 py-1 rounded flex-1" data-index="${index}" data-field="name">
+    <input type="number" value="1" min="1" class="border px-2 py-1 rounded w-16" data-index="${index}" data-field="quantity">
+    <input type="number" value="0" min="0" class="border px-2 py-1 rounded w-24" data-index="${index}" data-field="price">
+    <span class="font-semibold" id="itemTotal-${index}">0</span>
+  `;
+      itemsContainer.appendChild(row);
+    });
+
+    // --- Update item changes ---
+    itemsContainer.addEventListener("input", (e) => {
+      const index = e.target.dataset.index;
+      const field = e.target.dataset.field;
+      items[index][field] = field === "name" ? e.target.value : parseFloat(e.target.value) || 0;
+      items[index].total = items[index].quantity * items[index].price;
+      updateTotal();
+    });
+
+    function updateTotal() {
+      let total = 0;
+      items.forEach((item, i) => {
+        const itemTotal = item.quantity * item.price;
+        document.getElementById(`itemTotal-${i}`).innerText = itemTotal;
+        item.total = itemTotal;
+        total += itemTotal;
+      });
+      orderTotalEl.innerText = total;
+    }
+
+    // --- Submit order ---
+    orderForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const order = {
+        customer: document.getElementById("customerName").value || "Guest",
+        status: "pending",
+        items,
+        totalAmount: parseFloat(orderTotalEl.innerText),
+      };
+
+      try {
+        const res = await fetch(API_ORDERS, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(order),
+        });
+        if (!res.ok) throw new Error(await res.text());
+
+        orderModal.classList.add("hidden");
+        loadOrders();
+      } catch (err) {
+        console.error("Failed to save order:", err);
+      }
+    });
+
+    // --- Load orders ---
+    async function loadOrders() {
+      ordersContainer.innerHTML = "";
+      try {
+        const res = await fetch(API_ORDERS);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        const now = new Date();
+        data.forEach(order => {
+          const createdAt = new Date(order.createdAt);
+          const diffHrs = (now - createdAt) / 1000 / 3600;
+          if (diffHrs <= 2) renderOrderCard(order);
+        });
+      } catch (err) {
+        console.error("Failed to load orders:", err);
+      }
+    }
+
+    function renderOrderCard(order) {
+      const statusColors = {
+        pending: "bg-yellow-200 text-yellow-800",
+        paid: "bg-green-200 text-green-800",
+        cancelled: "bg-red-200 text-red-800"
+      };
+
+      const formatter = new Intl.NumberFormat('de-DE');
+
+      const card = document.createElement("div");
+      card.className = "bg-white p-4 rounded-xl shadow-md";
+
+      card.innerHTML = `
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="font-semibold">${order.customer}</h3>
+      <span class="px-2 py-1 rounded text-xs ${statusColors[order.status]}">${order.status}</span>
+    </div>
+    <ul class="text-sm mb-2">
+      ${order.items.map(i => `<li>${i.name} x${i.quantity} - ${formatter.format(i.price)} сум</li>`).join("")}
+    </ul>
+    <div class="font-bold text-right">${formatter.format(order.totalAmount)} сум</div>
+    <div class="text-xs text-gray-500 mb-2">Создан: ${new Date(order.createdAt).toLocaleTimeString()}</div>
+  `;
+
+      async function updateOrderStatus(id, status) {
+        try {
+          const res = await fetch(`${API_ORDERS}/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          });
+          if (!res.ok) throw new Error(await res.text());
+          loadOrders();
+        } catch (err) {
+          console.error("Failed to update order:", err);
+        }
+      }
+
+      if (order.status === "pending") {
+        const actions = document.createElement("div");
+        actions.className = "flex gap-2 mt-2";
+
+        const payBtn = document.createElement("button");
+        payBtn.className = "bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded";
+        payBtn.textContent = "Оплатить";
+        payBtn.onclick = () => updateOrderStatus(order._id, "paid");
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.className = "bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded";
+        cancelBtn.textContent = "Отменить";
+        cancelBtn.onclick = () => updateOrderStatus(order._id, "cancelled");
+
+        actions.appendChild(payBtn);
+        actions.appendChild(cancelBtn);
+        card.appendChild(actions);
+      }
+
+      ordersContainer.appendChild(card);
+    }
+
+    // --- Init ---
+    loadOrders();
+    setInterval(loadOrders, 7200000); // Refresh every 2 hours
+  </script>
+
+
+</body>
+
+</html>

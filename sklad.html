@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Склад - Inventory</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+  <!-- Header -->
+  <div class="w-full max-w-6xl flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">📦 Склад - Inventory</h1>
+    <div class="flex gap-2">
+      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+        <a href="./index.html">Menu</a>
+      </button>
+      <button id="openModalBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+        + Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="w-full max-w-6xl mb-4">
+    <input type="text" id="searchInput" placeholder="🔍 Search items..." class="w-full border rounded-lg p-2 shadow" />
+  </div>
+
+  <!-- Table -->
+  <div class="w-full max-w-6xl overflow-x-auto bg-white shadow rounded-lg">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="p-3 border">Item Name</th>
+          <th class="p-3 border">Category</th>
+          <th class="p-3 border">Unit</th>
+          <th class="p-3 border">Quantity</th>
+          <th class="p-3 border">Unit Cost ($)</th>
+          <th class="p-3 border cursor-pointer" id="sortByValue">Total Value ($) ⬍</th>
+          <th class="p-3 border">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTable"></tbody>
+      <tfoot>
+        <tr class="bg-gray-100 font-bold">
+          <td colspan="5" class="p-3 border text-right">Total Inventory Value:</td>
+          <td id="totalInventoryValue" class="p-3 border"></td>
+          <td class="p-3 border"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Add/Edit Item Modal -->
+  <div id="itemModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+      <h2 id="modalTitle" class="text-xl font-bold mb-4">Add New Item</h2>
+      <form id="itemForm" class="space-y-3">
+        <input type="text" id="itemName" placeholder="Item Name" class="w-full border rounded p-2" required />
+        <input type="text" id="category" placeholder="Category" class="w-full border rounded p-2" required />
+
+        <input type="number" step="0.01" id="quantity" placeholder="Quantity" class="w-full border rounded p-2"
+          required />
+
+        <select id="unitSelect" class="w-full border rounded p-2" required>
+          <option value="">Select Unit</option>
+          <option value="pcs">pcs</option>
+          <option value="kg">kg</option>
+          <option value="liters">liters</option>
+          <option value="packs">packs</option>
+          <option value="bottles">bottles</option>
+        </select>
+
+        <input type="number" step="0.01" id="unitCost" placeholder="Unit Cost (USZ)" class="w-full border rounded p-2"
+          required />
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" id="closeModalBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded">
+            Cancel
+          </button>
+          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded">
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Decrement Modal -->
+  <div id="decrementModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-80">
+      <h2 class="text-xl font-bold mb-4">Modify Item</h2>
+      <div class="flex flex-col gap-3">
+        <button id="decreaseItemBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">
+          Decrease Quantity
+        </button>
+        <button id="deleteItemBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+          Delete Item
+        </button>
+        <button id="closeDecrementModal" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/sklad.js"></script>
+</body>
+
+</html>
