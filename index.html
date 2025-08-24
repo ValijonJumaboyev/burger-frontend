@@ -19,8 +19,13 @@
         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
         <i class="fa-solid fa-plus"></i> Создать заказ
       </button>
-      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-        <a href="./sklad.html ">Sklad</a>
+      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        onclick="window.location.href='sklad.html'">
+        Sklad
+      </button>
+      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        onclick="window.location.href='recipe.html'">
+        Recipes
       </button>
     </div>
 
@@ -65,7 +70,8 @@
   </div>
 
   <script>
-    const API_URL = "https://burger-backend-o3cx.onrender.com";
+    const API_URL = "https://burger-backend-o3cx.onrender.com"
+
     const API_ORDERS = `${API_URL}/api/orders`; // adjust if your backend mounts it differently
 
     const orderModal = document.getElementById("orderModal");
@@ -212,7 +218,7 @@
           if (!res.ok) throw new Error(await res.text());
           loadOrders();
         } catch (err) {
-          console.error("Failed to update order:", err);
+          alert(err)
         }
       }
 
